@@ -1,14 +1,42 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 16 11:48:43 2019
+Describe web forms for Flask. To build a User interface within the website.
+So it points on the functionality part of the website where the intact with
+Flask and is pushed to type in information e.g. login or registration.
+The forms are described by classes. One class for each form.
+Through the fact that classes are just form descriptors in usual cases there is
+not init required, only public attributes for the form fields.
 
-@author: dep17364
+.. module:: forms
+   :platform: Unix, Windows
+   :synopsis: Describe web forms for Flask.
+
+.. moduleauthor:: Tobias Wulf <tobias.x57756c66@gmail.com>
+   :version: 0.9
+   :status: development
+
+:Classes:
+
+    :class:`LoginForm`
+    :class:`RegistrationForm`
+    :class:`EditProfileForm`
+    :class:`PurchaseForm`
+    :class:`ResetPasswordRequestForm`
+    :class:`ResetPasswordForm`
+
+.. seealso::
+    :mod:`flask_wtf`
+    :mod:`wtforms`
+    :mod:`wtforms.validators`
+    :mod:`flask_babel`
+    :mod:`app.models`
+
 """
-
 
 from flask_wtf import FlaskForm
 from wtforms import (
-    StringField, PasswordField, BooleanField, SubmitField, TextAreaField, FloatField, DateField
+    StringField, PasswordField, BooleanField, SubmitField, TextAreaField,
+    FloatField, DateField
 )
 from wtforms.validators import (
     DataRequired, ValidationError, Email, EqualTo, Length, NumberRange
@@ -18,6 +46,26 @@ from app.models import User
 
 
 class LoginForm(FlaskForm):
+    """Describe the user login form where the needs give his username and his
+    required password. Also include a bool to remember the users credentials
+    and a submit button to execute the login.
+
+    :Class inheritance:
+
+        FlaskForm
+
+    :Attributes:
+
+        :param username: Name of the user, one word.
+        :type username: StringField
+        :param password: Password of user, one word with special chars.
+        :type password: PasswordField
+        :param remember_me: Boolean if to remember user credentials or not.
+                           Default False.
+        :type remember_me: BooleanField
+        :param submit: Submit button to execute the action.
+        :type submit: SubmitField
+    """
     username = StringField(_l('Username'), validators=[DataRequired()])
     password = PasswordField(_l('Password'), validators=[DataRequired()])
     remember_me = BooleanField(_l("Remember Me"))

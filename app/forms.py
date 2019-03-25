@@ -46,7 +46,7 @@ from app.models import User
 
 
 class LoginForm(FlaskForm):
-    """Describe the user login form where the needs give his username and his
+    """Describe the user login form. The user needs to give his username and
     required password. Also include a bool to remember the users credentials
     and a submit button to execute the login.
 
@@ -56,9 +56,11 @@ class LoginForm(FlaskForm):
 
     :Attributes:
 
-        :param username: Name of the user, one word.
+        :param username: Name of the user, one word. It is input required to
+                         validate the field on submit.
         :type username: StringField
-        :param password: Password of user, one word with special chars.
+        :param password: Password of user, one word with special chars. It is
+                         input required to validate the field on submit.
         :type password: PasswordField
         :param remember_me: Boolean if to remember user credentials or not.
                            Default False.
@@ -66,6 +68,7 @@ class LoginForm(FlaskForm):
         :param submit: Submit button to execute the action.
         :type submit: SubmitField
     """
+
     username = StringField(_l('Username'), validators=[DataRequired()])
     password = PasswordField(_l('Password'), validators=[DataRequired()])
     remember_me = BooleanField(_l("Remember Me"))
@@ -73,6 +76,30 @@ class LoginForm(FlaskForm):
 
 
 class RegistrationForm(FlaskForm):
+    """Registration form is similar equal to the LoginForm class.
+    Differences are the second password field and a functionality to validate
+    the email if it is already existing in the database.
+
+    :Class inheritance:
+
+        FlaskForm
+
+    :Attributes:
+
+        :param username: Name of the user, one word. It is input required to
+                         validate the field on submit.
+        :type username: StringField
+        :param email: User email. Standard email address. Input and standard
+                      email validation.
+        :param password: Password of user, one word with special chars. It is
+                         input required to validate the field on submit.
+        :type password: PasswordField
+        :param password2: Password of user, one word with special chars. It is
+                         input required and needs to be equal to passwordto
+                         validate the field on submit.
+        :type submit: SubmitField
+    """
+
     username = StringField(_l('Username'), validators=[DataRequired()])
     email = StringField(_l('Email'), validators=[DataRequired(), Email()])
     password = PasswordField(_l('Password'), validators=[DataRequired()])
@@ -82,6 +109,14 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField(_l('Register'))
 
     def validate_email(self, email):
+        """Validate email address if it is already in the user table of the
+        database. If it is in the database a validation error will be raised.
+
+        :Errors:
+
+            :raises: ValidationError
+        """
+
         email = User.query.filter_by(email=email.data).first()
         if email is not None:
             raise ValidationError(_l("Please use a different email address."))
@@ -89,7 +124,10 @@ class RegistrationForm(FlaskForm):
 
 class EditProfileForm(FlaskForm):
     username = StringField(_l('Username'), validators=[DataRequired()])
-    remindings = TextAreaField(_l("Remindings"), validators=[Length(min=0, max=140)])
+    remindings = TextAreaField(
+        _l("Remindings"),
+        validators=[Length(min=0, max=140)]
+    )
     submit = SubmitField(_l('Submit'))
 
     def __init__(self, original_username, *args, **kwargs):
@@ -104,11 +142,25 @@ class EditProfileForm(FlaskForm):
 
 
 class PurchaseForm(FlaskForm):
-    purchase_date = DateField(_l('Purchase date'), format='%d.%m.%Y', validators=[DataRequired()])
-    purchaser = StringField(_l('Purchaser'), validators=[DataRequired()], default='Me')
+    purchase_date = DateField(
+        _l('Purchase date'),
+        format='%d.%m.%Y',
+        validators=[DataRequired()]
+    )
+    purchaser = StringField(
+        _l('Purchaser'),
+        validators=[DataRequired()],
+        default='Me'
+    )
     shopname = StringField(_l('Shopname'), validators=[DataRequired()])
-    value = FloatField(_l('Enter overall value of purchase'), validators=[DataRequired(), NumberRange(min=0.01)])
-    subject = StringField(_l('Subject of purchase'), validators=[DataRequired()])
+    value = FloatField(
+        _l('Enter overall value of purchase'),
+        validators=[DataRequired(), NumberRange(min=0.01)]
+    )
+    subject = StringField(
+        _l('Subject of purchase'),
+        validators=[DataRequired()]
+    )
     submit = SubmitField(_l('Submit'))
 
 
@@ -119,5 +171,8 @@ class ResetPasswordRequestForm(FlaskForm):
 
 class ResetPasswordForm(FlaskForm):
     password = PasswordField(_l('Password'), validators=[DataRequired()])
-    password2 = PasswordField(_l('Repeat Password'), validators=[DataRequired(), EqualTo('password')])
+    password2 = PasswordField(
+        _l('Repeat Password'),
+        validators=[DataRequired(), EqualTo('password')]
+    )
     submit = SubmitField(_l('Reset Password'))

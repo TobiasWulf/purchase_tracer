@@ -1,8 +1,45 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jan 17 08:22:04 2019
+# noinspection PyUnresolvedReferences
+"""Describe the application database tables to handle the application data
+(backend). The models or tables are described with the SQLAlchemy orm layer.
+The database tables are of two different types of tables. The first type of
+table is a basic data table which includes mixed data and described by a class
+(SQLAlchemy Model). The second type of table is a cross reference table which
+only includes ids from data tables as foreign keys.
 
-@author: dep17364
+.. module:: models
+   :platform: Unix, Windows
+   :synopsis: Describe the application database models or tables for Flask.
+
+.. moduleauthor:: Tobias Wulf <tobias.x57756c66@gmail.com>
+   :version: 0.9
+   :status: development
+
+:Classes:
+
+    :class:`Shop`
+    :class:`User`
+    :class:`Purchase`
+
+:Attributes:
+
+    :param followers: User follower references.
+                      Connected user ids (foreign keys).
+    :type followers: db.Table
+
+:Functions:
+
+    :func:`load_user`
+
+.. seealso::
+
+    :mod:`flask_login`
+    :mod:`werkzeug.security`
+    :mod:`hashlib`
+    :mod:`jwt`
+    :mod:`datetime`
+    :mod:`time`
+    :mod:`app`
 """
 
 from flask_login import UserMixin
@@ -14,9 +51,9 @@ from time import time
 from app import db, login, app
 
 
-# connect db user table with flask login
 @login.user_loader
 def load_user(id):
+    """Connect db user table with flask login."""
     return User.query.get(int(id))
 
 
@@ -28,17 +65,32 @@ followers = db.Table(
 )
 
 
+# noinspection PyUnresolvedReferences
 class Shop(db.Model):
+    """Describe database table of shops where users do purchases.
+
+    :Attributes:
+
+        :param __tablename__: Database table name.
+        :type __tablename__: str
+        :param id: Primary key. New assigned for every entry. Unique.
+        :type id: int
+        :param shopname: Name of the shop.
+        :type shopname: str
+        :param purchases: Reference to each purchase as foreign key. Fetched
+                          by shop id in purchase table.
+        :type purchases: db.relationship
+    """
     ___tablename__ = 'shop'
     id = db.Column(db.Integer, primary_key=True)
     shopname = db.Column(db.String(64), index=True, unique=True)
     purchases = db.relationship('Purchase', backref='seller', lazy='dynamic')
 
     def __repr__(self):
+        """Print for single element of database table."""
         return "<Shop {}>".format(self.shopname)
 
 
-# db user table 
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)

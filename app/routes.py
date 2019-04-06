@@ -38,7 +38,7 @@ def index():
             purchaser = current_user
         purchase = Purchase(
             purchase_date=form.purchase_date.data,
-            purchaser=purchaser.username,
+            purchaser=purchaser,
             value=form.value.data,
             seller=shop,
             subject=form.subject.data,

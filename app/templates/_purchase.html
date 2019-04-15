@@ -1,23 +1,13 @@
-    {% if purchase.language and purchase.language != g.locale %}
-    <br><br>
-    <span translation="{{ purchase.id }}">
-        <a href="javascript:translate(
-                    '#purchase{{ purchase.id }}',
-                    '#translation{{ purchase.id }}',
-                    '{{ purchase.language }}',
-                    '{{ g.locale }}');">{{ _("Translate") }}</a>
-    </span>
-    {% endif %}
     <table class="table table-hover">
         <tr>
             <td width="70px">
-                <a href="{{ url_for('user', username=purchase.author.username) }}">
+                <a href="{{ url_for('main.user', username=purchase.author.username) }}">
                     <img src="{{ purchase.author.avatar(70) }}" />
                 </a>
             </td>
             <td>
                 {% set user_link %}
-                    <a href="{{ url_for('user', username=purchase.author.username) }}">
+                    <a href="{{ url_for('main.user', username=purchase.author.username) }}">
                         {{ purchase.author.username }}
                     </a>
                 {% endset %}
@@ -29,7 +19,18 @@
                     {{ _("Who: %(purchaser)s", purchaser=purchase.purchaser.data) }}<br>
                     {{ _("Where: %(shop)s", shop=purchase.seller.shopname) }}<br>
                     {{ _("For what: %(need)s", need=purchase.subject) }}<br>
-                    {{ _("How much: %(value).2f", value=purchase.value) }}€</span>
+                    {{ _("How much: %(value).2f", value=purchase.value) }}€
+                </span>
+                {% if purchase.language and purchase.language != g.locale %}
+                <br><br>
+                <span translation="{{ purchase.id }}">
+                    <a href="javascript:translate(
+                        '#purchase{{ purchase.id }}',
+                        '#translation{{ purchase.id }}',
+                        '{{ purchase.language }}',
+                        '{{ g.locale }}');">{{ _("Translate") }}</a>
+                </span>
+                {% endif %}
             </td>
         </tr>
     </table>

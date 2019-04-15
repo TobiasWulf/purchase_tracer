@@ -42,15 +42,17 @@ only includes ids from data tables as foreign keys.
     :mod:`app`
 """
 
+from flask import current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from hashlib import md5
 import jwt
 from datetime import datetime
 from time import time
-from app import db, login, app
+from app import db, login
 
 
+# noinspection PyShadowingBuiltins
 @login.user_loader
 def load_user(id):
     """Connect db user table with flask login."""
@@ -91,6 +93,7 @@ class Shop(db.Model):
         return "<Shop {}>".format(self.shopname)
 
 
+# noinspection PyBroadException,PyShadowingBuiltins
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -148,7 +151,7 @@ class User(UserMixin, db.Model):
                 'reset_password': self.id,
                 'exp': time() + expires_in
             },
-            app.config['SECRET_KEY'],
+            current_app.config['SECRET_KEY'],
             algorithm='HS256'
         ).decode('utf-8')
 
@@ -157,7 +160,7 @@ class User(UserMixin, db.Model):
         try:
             id = jwt.decode(
                 token,
-                app.config['SECRET_KEY'],
+                current_app.config['SECRET_KEY'],
                 algorithms='HS256'
             )['reset_password']
         except:

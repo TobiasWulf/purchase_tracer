@@ -23,7 +23,7 @@ the purchase data.
 Current Chapter (tutorial)
 ##########################
 
-* Chapter 14: `Ajax <https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax>`_
+* Chapter 15: `Better Application Structure <https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure>`_
 
 Flask application handling and deployment
 #########################################

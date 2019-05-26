@@ -9,6 +9,9 @@ __pycache__/
 #pycharm
 .idea/
 
+# try outs
+**/notebooks
+
 # From testing
 **/logs
 

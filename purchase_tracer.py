@@ -8,4 +8,9 @@ cli.register(app)
 
 @app.shell_context_processor
 def make_shell_context():
-    return dict(db=db, User=User, Shop=Shop, Purchase=Purchase)
+    return dict(
+        db=db,
+        User=User,
+        Shop=Shop,
+        Purchase=Purchase
+    )

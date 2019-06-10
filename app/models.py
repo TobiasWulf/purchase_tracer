@@ -70,7 +70,7 @@ followers = db.Table(
 )
 
 # purchases association table, user made purchases
-purchases = db.Table(
+purchases_table = db.Table(
     'purchases_table',
     db.Column('purchaser_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('purchase_id', db.Integer, db.ForeignKey('purchase.id'))
@@ -116,10 +116,10 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(128), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     posts = db.relationship('Purchase', backref='author', lazy='dynamic')
-    purchased = db.relationship(
+    purchases = db.relationship(
         'Purchase',
-        secondary=purchases,
-        back_populates='purchaser',
+        secondary=purchases_table,
+        backref='user_purchase',
         lazy='dynamic'
     )
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
@@ -146,25 +146,24 @@ class User(UserMixin, db.Model):
 
     def add_purchase(self, purchase):
         if not self.bought(purchase):
-            self.purchased.append(purchase)
+            self.purchases.append(purchase)
 
     def rm_purchase(self, purchase):
         if self.bought(purchase):
-            self.purchased.remove(purchase)
+            self.purchases.remove(purchase)
 
     def bought(self, purchase):
-        return self.purchased.filter(
-            purchases.c.purchase_id == purchase.id
+        return self.purchases.filter(
+            purchases_table.c.purchase_id == purchase.id
         ).count() > 0
 
     def bought_purchases(self):
         purchased = Purchase.query.join(
-            purchases,
-            (purchases.c.purchase_id == Purchase.id)).filter(
-            purchases.c.purchaser_id == self.id
+            purchases_table,
+            (purchases_table.c.purchase_id == Purchase.id)).filter(
+            purchases_table.c.purchaser_id == self.id
         )
-        own = User.query.filter_by(id=self.id)
-        return purchased.union(own).order_by(Purchase.timestamp.desc())
+        return purchased.order_by(Purchase.timestamp.desc())
 
     def follow(self, user):
         if not self.is_following(user):
@@ -233,8 +232,8 @@ class Purchase(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     purchaser = db.relationship(
         'User',
-        secondary=purchases,
-        back_populates='purchased',
+        secondary=purchases_table,
+        backref='purchase_user',
         lazy='dynamic'
     )
     purchase_date = db.Column(db.DateTime)
@@ -246,9 +245,11 @@ class Purchase(db.Model):
         return "<Value {}€>".format(str(self.value))
 
     def get_purchaser(self):
-        return User.query.join(
-            purchases,
-            (purchases.c.purchaser_id == User.id)).filter().first()
+        find_user = User.query.join(
+            purchases_table,
+            (purchases_table.c.purchaser_id == User.id)).filter(
+            purchases_table.c.purchase_id == self.id)
+        return find_user.first()
 
     # noinspection PyDefaultArgument
     @classmethod

@@ -209,6 +209,10 @@ class User(UserMixin, db.Model):
             return
         return User.query.get(id)
 
+    @classmethod
+    def get_user_list(cls):
+        return User.query.order_by(User.username)
+
     def __repr__(self):
         return "<User {}>".format(self.username)
 

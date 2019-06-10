@@ -24,7 +24,11 @@ def before_request():
 @bp.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
-    form = PurchaseForm(purchaser=current_user.username)
+    form = PurchaseForm()
+    form.purchaser.choices = [(current_user.id, current_user.username)] + [
+        (u.id, u.username) for u in User.get_user_list().filter(
+            User.id != current_user.id).all()
+    ]
     if form.validate_on_submit():
         language = guess_language(form.subject.data)
         if language == 'UNKNOWN' or len(language) > 5:
@@ -34,7 +38,7 @@ def index():
         if shop is None:
             shop = Shop(shopname=shopname)
             db.session.add(shop)
-        purchaser = User.query.filter_by(username=form.purchaser.data).first()
+        purchaser = User.query.get(form.purchaser.data)
         if purchaser is None:
             purchaser = current_user
         purchase = Purchase(
@@ -54,7 +58,7 @@ def index():
         page = request.args.get('page', 1, type=int)
         purchases = current_user.followed_purchases().paginate(
             page,
-            current_app.config['PURCHASES_PER_PAGE'],
+            current_app.config['ELEMENTS_PER_PAGE'],
             False
         )
         next_url = url_for('main.index', page=purchases.next_num) \
@@ -77,7 +81,7 @@ def explore():
     page = request.args.get('page', 1, type=int)
     purchases = Purchase.query.order_by(Purchase.timestamp.desc()).paginate(
         page,
-        current_app.config['PURCHASES_PER_PAGE'],
+        current_app.config['ELEMENTS_PER_PAGE'],
         False
     )
     next_url = url_for('main.explore', page=purchases.next_num) \
@@ -93,15 +97,41 @@ def explore():
     )
 
 
+@bp.route('/members')
+@login_required
+def members():
+    page = request.args.get('page', 1, type=int)
+    users = User.query.paginate(
+        page,
+        current_app.config['ELEMENTS_PER_PAGE'],
+        False
+    )
+    next_url = url_for(
+        'main.members',
+        page=users.next_num
+    ) if users.has_next else None
+    prev_url = url_for(
+        'main.members',
+        page=users.prev_num
+    ) if users.has_prev else None
+    return render_template(
+        'members.html',
+        title=_l('Members'),
+        members=users.items,
+        next_url=next_url,
+        prev_url=prev_url
+    )
+
+
 # noinspection PyShadowingNames
 @bp.route('/user/<username>')
 @login_required
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
     page = request.args.get('page', 1, type=int)
-    purchases = user.posts.order_by(Purchase.timestamp.desc()).paginate(
+    purchases = user.bought_purchases().paginate(
         page,
-        current_app.config['PURCHASES_PER_PAGE'],
+        current_app.config['ELEMENTS_PER_PAGE'],
         False
     )
     next_url = url_for(

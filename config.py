@@ -29,7 +29,7 @@ class Config(object):
     # MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
 
     # Posts per page configuration
-    PURCHASES_PER_PAGE = int(os.environ.get('PURCHASES_PER_PAGE'))
+    ELEMENTS_PER_PAGE = int(os.environ.get('ELEMENTS_PER_PAGE'))
 
     # Internalization configuration
     LANGUAGES = os.environ.get('LANGUAGES').split(',')

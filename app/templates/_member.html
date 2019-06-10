@@ -1,0 +1,26 @@
+    <table class="table table-hover">
+        <tr>
+            <td width="128px">
+                <a href="{{ url_for('main.user', username=member.username) }}">
+                    <img src="{{ member.avatar(128) }}" />
+                </a>
+            </td>
+            <td>
+                {% set user_link %}
+                    <a href="{{ url_for('main.user', username=member.username) }}">
+                        {{ member.username }}
+                    </a>
+                {% endset %}
+                {% if member.last_seen %}
+                    <p>{{ _("Last seen on: %(when)s", when=moment(member.last_seen).format("LLL")) }}</p>
+                {% endif %}
+                {{ _("%(username)s", username=user_link) }}
+                <br>
+                <span id="member{{ member.id }}">
+                    {{ _("Email: %(email)s", email=member.email) }}<br>
+                    {{ _("Posts: %(posts)s", posts=member.followed_purchases().all()|length) }}<br>
+                    {{ _("Purchases: %(purchases)s", purchases=member.bought_purchases().all()|length) }}<br>
+                </span>
+            </td>
+        </tr>
+    </table>

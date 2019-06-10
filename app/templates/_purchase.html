@@ -15,7 +15,7 @@
                 username=user_link, when=moment(purchase.timestamp).fromNow()) }}
                 <br>
                 <span id="purchase{{ purchase.id }}">
-                    {{ _("When: %(when)s", when=moment(purchase.purchase_date).format("LLL")) }}<br>
+                    {{ _("When: %(when)s", when=moment(purchase.purchase_date).format("LL")) }}<br>
                     {{ _("Who: %(purchaser)s", purchaser=purchase.get_purchaser().username) }}<br>
                     {{ _("Where: %(shop)s", shop=purchase.seller.shopname) }}<br>
                     {{ _("For what: %(need)s", need=purchase.subject) }}<br>

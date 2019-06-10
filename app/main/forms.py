@@ -29,8 +29,10 @@ inherit by FlaskForm class there is in usual cases no __init__ method required.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField, DateField, FloatField
-from wtforms.validators import ValidationError, DataRequired, Length, NumberRange
+from wtforms import (StringField, SubmitField, TextAreaField, DateField,
+                     FloatField, SelectField)
+from wtforms.validators import (ValidationError, DataRequired, Length,
+                                NumberRange)
 from flask_babel import lazy_gettext as _l
 from app.models import User
 
@@ -104,7 +106,7 @@ class PurchaseForm(FlaskForm):
         :param purchase_date: Date of purchase of date format DD-MM-YYYY.
         :type purchase_date: DateField
         :param purchaser: User who did the purchase.
-        :type purchaser: StringField
+        :type purchaser: SelectField
         :param shopname: Shop where the purchase was done.
         :type shopname: StringField
         :param subject: Main theme of the purchase.
@@ -118,9 +120,11 @@ class PurchaseForm(FlaskForm):
         format='%d.%m.%Y',
         validators=[DataRequired()]
     )
-    purchaser = StringField(
+    purchaser = SelectField(
         _l('Purchaser'),
-        validators=[DataRequired()],
+        # choices=[],
+        coerce=int,
+        validators=[DataRequired()]
     )
     shopname = StringField(_l('Shopname'), validators=[DataRequired()])
     value = FloatField(

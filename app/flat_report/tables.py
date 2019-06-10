@@ -16,7 +16,7 @@ purchases_table = dash_table.DataTable(
     ],
     pagination_settings={
         'current_page': 0,
-        'page_size': PAGE_SIZE
+        'page_size': _page_size
     },
     pagination_mode='be',
 

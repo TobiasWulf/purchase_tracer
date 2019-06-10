@@ -29,8 +29,8 @@ inherit by FlaskForm class there is in usual cases no __init__ method required.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField
-from wtforms.validators import ValidationError, DataRequired, Length
+from wtforms import StringField, SubmitField, TextAreaField, DateField, FloatField
+from wtforms.validators import ValidationError, DataRequired, Length, NumberRange
 from flask_babel import lazy_gettext as _l
 from app.models import User
 

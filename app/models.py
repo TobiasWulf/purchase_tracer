@@ -50,6 +50,9 @@ import jwt
 from datetime import datetime
 from time import time
 from app import db, login
+import pandas as pd
+import numpy as np
+import os.path as op
 
 
 # noinspection PyShadowingBuiltins
@@ -64,6 +67,13 @@ followers = db.Table(
     'followers',
     db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
+)
+
+# purchases association table, user made purchases
+purchases = db.Table(
+    'purchases_table',
+    db.Column('purchaser_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('purchase_id', db.Integer, db.ForeignKey('purchase.id'))
 )
 
 
@@ -83,14 +93,19 @@ class Shop(db.Model):
                           by shop id in purchase table.
         :type purchases: db.relationship
     """
+
     ___tablename__ = 'shop'
     id = db.Column(db.Integer, primary_key=True)
     shopname = db.Column(db.String(64), index=True, unique=True)
-    purchases = db.relationship('Purchase', backref='seller', lazy='dynamic')
+    sales = db.relationship('Purchase', backref='seller', lazy='dynamic')
 
     def __repr__(self):
         """Print for single element of database table."""
         return "<Shop {}>".format(self.shopname)
+
+
+class UnknownUserError(Exception):
+    pass
 
 
 # noinspection PyBroadException,PyShadowingBuiltins
@@ -100,7 +115,13 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(128), index=True, unique=True)
     password_hash = db.Column(db.String(128))
-    purchases = db.relationship('Purchase', backref='author', lazy='dynamic')
+    posts = db.relationship('Purchase', backref='author', lazy='dynamic')
+    purchased = db.relationship(
+        'Purchase',
+        secondary=purchases,
+        back_populates='purchaser',
+        lazy='dynamic'
+    )
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     remindings = db.Column(db.String(140))
     followed = db.relationship(
@@ -122,6 +143,28 @@ class User(UserMixin, db.Model):
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size
         )
+
+    def add_purchase(self, purchase):
+        if not self.bought(purchase):
+            self.purchased.append(purchase)
+
+    def rm_purchase(self, purchase):
+        if self.bought(purchase):
+            self.purchased.remove(purchase)
+
+    def bought(self, purchase):
+        return self.purchased.filter(
+            purchases.c.purchase_id == purchase.id
+        ).count() > 0
+
+    def bought_purchases(self):
+        purchased = Purchase.query.join(
+            purchases,
+            (purchases.c.purchase_id == Purchase.id)).filter(
+            purchases.c.purchaser_id == self.id
+        )
+        own = User.query.filter_by(id=self.id)
+        return purchased.union(own).order_by(Purchase.timestamp.desc())
 
     def follow(self, user):
         if not self.is_following(user):
@@ -171,13 +214,29 @@ class User(UserMixin, db.Model):
         return "<User {}>".format(self.username)
 
 
+_dtypes = dict(
+    user=np.str,
+    purchaser=np.str,
+    purchase_date=str,
+    shop=np.str,
+    subject=np.str,
+    value=np.float32
+)
+_csv_path = 'notebooks/purchase_list.csv'
+
+
 class Purchase(db.Model):
     __tablename__ = 'purchase'
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Float)
     subject = db.Column(db.String(64))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    purchaser = db.Column(db.String(64))
+    purchaser = db.relationship(
+        'User',
+        secondary=purchases,
+        back_populates='purchased',
+        lazy='dynamic'
+    )
     purchase_date = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'))
@@ -185,3 +244,67 @@ class Purchase(db.Model):
 
     def __repr__(self):
         return "<Value {}€>".format(str(self.value))
+
+    def get_purchaser(self):
+        return User.query.join(
+            purchases,
+            (purchases.c.purchaser_id == User.id)).filter().first()
+
+    # noinspection PyDefaultArgument
+    @classmethod
+    def _load_from_csv(cls, path: str = _csv_path, dtypes: dict = _dtypes):
+        """Load purchases from .csv file."""
+
+        if not op.isfile(path):
+            raise FileNotFoundError(path)
+        return pd.read_csv(
+            'notebooks/purchase_list.csv',
+            sep=';',
+            header=0,
+            dtype=dtypes,
+            parse_dates=['purchase_date']
+        )
+
+    @classmethod
+    def _add_purchases_from_csv(cls):
+        """Add purchases from .csv file to database table. Works only with
+        known users.
+        """
+
+        for index, row in Purchase._load_from_csv().iterrows():
+            user = User.query.filter_by(username=row['user']).first()
+            if user is None:
+                db.session.rollback()
+                raise UnknownUserError("user {0} unknown".format(row['user']))
+            purchaser = User.query.filter_by(username=row['purchaser']).first()
+            if purchaser is None:
+                db.session.rollback()
+                raise UnknownUserError(
+                    "purchaser {0} unknown".format(row['purchaser'])
+                )
+            shop = Shop.query.filter_by(shopname=row['shop']).first()
+            if shop is None:
+                shop = Shop(shopname=row['shop'])
+                db.session.add(shop)
+
+            check_purchase_exists_query = db.session.query(Purchase).filter(
+                Purchase.user_id == user.id,
+                Purchase.purchase_date == row['purchase_date'],
+                Purchase.shop_id == shop.id,
+                Purchase.subject == row['subject'],
+                Purchase.value == row['value']
+            )
+
+            if not db.session.query(
+                    check_purchase_exists_query.exists()).scalar():
+                purchase = Purchase(
+                        author=user,
+                        purchase_date=row['purchase_date'],
+                        seller=shop,
+                        subject=row['subject'],
+                        value=row['value'],
+                        language=''
+                )
+                purchaser.add_purchase(purchase)
+                db.session.add(purchase)
+        db.session.commit()

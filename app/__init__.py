@@ -4,12 +4,15 @@ import os
 from flask import Flask, request, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required
 from flask_mail import Mail
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_babel import Babel, lazy_gettext as _l
 from config import Config
+from dash import Dash
+from flask.helpers import get_root_path
+import dash_bootstrap_components as dbc
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -42,6 +45,8 @@ def create_app(config_class=Config):
 
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
+
+    register_dashapps(app)
 
     if not app.debug and not app.testing:
         if app.config['MAIL_SERVER']:
@@ -84,6 +89,32 @@ def create_app(config_class=Config):
         app.logger.info('Purchase Tracer startup')
 
     return app
+
+
+def register_dashapps(server):
+    from app.flat_report.layouts import layout
+    from app.flat_report.callbacks import register_callbacks
+
+    # Meta tags for viewport responsiveness
+    meta_viewport = {"name": "viewport", "content": "width=device-width, initial-scale=1, shrink-to-fit=no"}
+
+    flat_report = Dash(__name__,
+                       server=server,
+                       external_stylesheets=[dbc.themes.BOOTSTRAP],
+                       url_base_pathname='/flat_report/',
+                       assets_folder=get_root_path(__name__) + '/flat_report/assets/',
+                       meta_tags=[meta_viewport])
+
+    flat_report.title = "Flat Report"
+    flat_report.layout = layout
+    register_callbacks(flat_report)
+    _protect_dashviews(flat_report)
+
+
+def _protect_dashviews(dashapp):
+    for view_func in dashapp.server.view_functions:
+        if view_func.startswith(dashapp.url_base_pathname):
+            dashapp.server.view_functions[view_func] = login_required(dashapp.server.view_functions[view_func])
 
 
 @babel.localeselector

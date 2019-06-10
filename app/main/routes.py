@@ -33,18 +33,19 @@ def index():
         shop = Shop.query.filter_by(shopname=shopname).first()
         if shop is None:
             shop = Shop(shopname=shopname)
+            db.session.add(shop)
         purchaser = User.query.filter_by(username=form.purchaser.data).first()
         if purchaser is None:
             purchaser = current_user
         purchase = Purchase(
             purchase_date=form.purchase_date.data,
-            purchaser=purchaser.username,
             value=form.value.data,
             seller=shop,
             subject=form.subject.data,
             author=current_user,
             language=language
         )
+        purchaser.add_purchase(purchase)
         db.session.add(purchase)
         db.session.commit()
         flash(_l("Your purchase is traced now!"))
@@ -98,7 +99,7 @@ def explore():
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
     page = request.args.get('page', 1, type=int)
-    purchases = user.purchases.order_by(Purchase.timestamp.desc()).paginate(
+    purchases = user.posts.order_by(Purchase.timestamp.desc()).paginate(
         page,
         current_app.config['PURCHASES_PER_PAGE'],
         False
@@ -190,3 +191,9 @@ def translate_text():
             )
         )
     )
+
+
+@bp.route('/flat_report')
+@login_required
+def flat_report():
+    return redirect(url_for('/flat_report/'))
